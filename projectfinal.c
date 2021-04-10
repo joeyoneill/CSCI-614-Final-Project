@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BILLION  1000000000L;
-
 /* Notes from class 
 Timing in C for project 
 clock_gettime()
@@ -18,7 +16,14 @@ Data in array ints, characters exc
 Where do you declare array not inside function (heap malloc) 
 DONT FORGET FREE */ 
 
-int array[1000]; //array for time trials use to sort then find median
+#define ARR_SIZE 1000
+
+int array[ARR_SIZE]; //array for time trials use to sort then find median  
+
+//turn nanoseconds into sec easier readability
+static long long ts_usecs(struct timespec t) { 
+  return (t.tv_sec * 1000000000 + t.tv_nsec);
+}
 
 // 1. How big is a cache block?
 void get_cache_block_size() {
@@ -41,41 +46,63 @@ void get_cache_size() {
 }
 
 char *funcA(void){
-//accessing memory 
+    //accessing memory 
     char *arr = malloc(sizeof(char) * 20); //make large enough for cache 32K
     strcpy(arr, "Hello");
     return arr;
 }
 
-void funcB(void){
-    struct timespec start, stop;
-    double accum;
+void time_main_memory(void){
+    struct timespec t0, t1;
     char *arr;
     int a = 0;
     //begin outer loop to record time 
-    for (int i = 0; i < 1000; i++) {
-    //inner loop  
-    	clock_gettime(CLOCK_REALTIME, &start);
-    	arr = funcA();
+    for (int i = 0; i < ARR_SIZE; i++) {
+        //inner loop  
+        clock_gettime(CLOCK_MONOTONIC, &t0);
+        arr = funcA();
         while(a < 5){
-        	printf("%s\n",arr); 
-        //access to a position in array NEEDED 
-        	a++;
+            printf("%s\n",arr);
+
+            // non print access needed
+
+            a++;
         }
-        clock_gettime(CLOCK_REALTIME, &stop);
-        accum = ( stop.tv_sec - start.tv_sec ) + ( stop.tv_nsec - start.tv_nsec ); // / BILLION;
 
-        printf("%f\n", accum);
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+        long long t_start = ts_usecs(t0);
+        long long t_end = ts_usecs(t1);
 
-        array[i] = accum; //then take median
-    	free(arr);
+        array[i]= (t_end - t_start); //add time taken to array 
+
+        free(arr); //free space
     }
     arr = NULL;
-  
+}
+
+void selectionSort(int arr[], int n){ //sorting the array of times 
+    int i, j, min_n;
+ 
+    for (i = 0; i < n - 1; i++) {
+ 
+        // Find the minimum element in unsorted array
+        min_n = i;
+        for (j = i + 1; j < n; j++)
+            if (arr[j] < arr[min_n])
+                min_n = j;
+ 
+        // Swap the found minimum element
+        // with the first element
+        long long hold = arr[i];
+        arr[i] = arr[min_n];
+        arr[min_n] = hold;
+    }
 }
 
 int main () {
-    //funcB();
+    time_main_memory();
+    selectionSort(array, ARR_SIZE);
+    printf("Main? Memory Reference time: %d\n", array[500]);
 
     //get_cache_block_size();
     get_cache_size();
