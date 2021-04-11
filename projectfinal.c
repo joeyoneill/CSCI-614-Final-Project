@@ -16,10 +16,6 @@ Data in array ints, characters exc
 Where do you declare array not inside function (heap malloc) 
 DONT FORGET FREE */ 
 
-#define ARR_SIZE 1000
-
-int array[ARR_SIZE]; //array for time trials use to sort then find median  
-
 //turn nanoseconds into sec easier readability
 static long long ts_usecs(struct timespec t) { 
   return (t.tv_sec * 1000000000 + t.tv_nsec);
@@ -27,7 +23,40 @@ static long long ts_usecs(struct timespec t) {
 
 // 1. How big is a cache block?
 void get_cache_block_size() {
+    // Cache Block Size is cache_alignment in the /proc/cpuinfo file
+    FILE *f;
+    char s;
+    int count = 0;
 
+    // Gets the cache size from this file
+    f = fopen("/proc/cpuinfo","r");
+    while((s=fgetc(f))!=EOF) {
+        count = count + 1;
+    }
+    fclose(f);
+
+    char cpuinfo[count];
+
+    // Gets the cache size from this file
+    f = fopen("/proc/cpuinfo","r");
+    int index = 0;
+    while((s=fgetc(f))!=EOF) {
+        cpuinfo[index] = s;
+        index++;
+    }
+    fclose(f);
+
+    for(int i = 0; i < count; i++) {
+        if(cpuinfo[i] == 'c' && cpuinfo[i+5] == '_' && cpuinfo[i+6] == 'a' && cpuinfo[i+14] == 't') {
+            //for(int j = 0; j < 20; j++) {
+            //    printf("%c", cpuinfo[i + j]);
+            //}
+            printf("Cache Block Size: %c", cpuinfo[i + 18]);
+            printf("%c", cpuinfo[i + 19]);
+            break;
+        }
+    }
+    printf("\n");
 }
 
 // 2. How big is the cache?
@@ -45,42 +74,8 @@ void get_cache_size() {
     fclose(f);
 }
 
-char *funcA(void){
-    //accessing memory 
-    char *arr = malloc(sizeof(char) * 20); //make large enough for cache 32K
-    strcpy(arr, "Hello");
-    return arr;
-}
-
-void time_main_memory(void){
-    struct timespec t0, t1;
-    char *arr;
-    int a = 0;
-    //begin outer loop to record time 
-    for (int i = 0; i < ARR_SIZE; i++) {
-        //inner loop  
-        clock_gettime(CLOCK_MONOTONIC, &t0);
-        arr = funcA();
-        while(a < 5){
-            printf("%s\n",arr);
-
-            // non print access needed
-
-            a++;
-        }
-
-        clock_gettime(CLOCK_MONOTONIC, &t1);
-        long long t_start = ts_usecs(t0);
-        long long t_end = ts_usecs(t1);
-
-        array[i]= (t_end - t_start); //add time taken to array 
-
-        free(arr); //free space
-    }
-    arr = NULL;
-}
-
-void selectionSort(int arr[], int n){ //sorting the array of times 
+// Sorting mechanism to find time in time_array
+void selectionSort(int arr[], int n){
     int i, j, min_n;
  
     for (i = 0; i < n - 1; i++) {
@@ -99,13 +94,61 @@ void selectionSort(int arr[], int n){ //sorting the array of times
     }
 }
 
-int main () {
-    time_main_memory();
-    selectionSort(array, ARR_SIZE);
-    printf("Main? Memory Reference time: %d\n", array[500]);
+// Main Array for timing experimentation
+int timing(int n) {
+    // time array initialization
+    const int time_array_size = 1000;
+    int time_array[time_array_size];
 
-    //get_cache_block_size();
+    //
+    for(int j = 0; j < 1000; j++) {
+        // Testing
+        const int int_arr_size = n;
+        int int_array[int_arr_size];
+
+        // Timing
+        struct timespec start, stop;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Inner For Loop
+        for (int i = 0; i < int_arr_size; i++) {
+            // Access in memory
+            int_array[i] = i * 3;
+        }
+        clock_gettime(CLOCK_MONOTONIC, &stop);
+
+        //printf("%d: %lld\n", j+1, ts_usecs(stop) - ts_usecs(start));
+        time_array[j] = ts_usecs(stop) - ts_usecs(start);
+    }
+
+    // Sort Time Array
+    selectionSort(time_array, time_array_size);
+
+    // Median Time of array
+    int median = time_array[time_array_size/2];
+
+    return median;
+}
+
+void print_timings() {
+    printf("Time at array size 1: %d ns\n", timing(1));
+    printf("Time at array size 2: %d ns\n", timing(2));
+    printf("Time at array size 4: %d ns\n", timing(4));
+    printf("Time at array size 8: %d ns\n", timing(8));
+    printf("Time at array size 16: %d ns\n", timing(16));
+    printf("Time at array size 32: %d ns\n", timing(32));
+    printf("Time at array size 64: %d ns\n", timing(64));
+    printf("Time at array size 128: %d ns\n", timing(128));
+    printf("Time at array size 256: %d ns\n", timing(256));
+    printf("Time at array size 512: %d ns\n", timing(512));
+    printf("Time at array size 1024: %d ns\n", timing(1024));
+}
+
+int main () {
+    get_cache_block_size();
     get_cache_size();
+
+    print_timings();
 
     return 0;
 }
