@@ -131,10 +131,16 @@ int timing(int n) {
 }
 
 void print_timings() {
-    printf("Time at array size 1: %d ns\n", timing(1));
-    printf("Time at array size 2: %d ns\n", timing(2));
-    printf("Time at array size 4: %d ns\n", timing(4));
-    printf("Time at array size 8: %d ns\n", timing(8));
+    int one = timing(1);
+    int two = timing(2);
+    int four = timing(4);
+    int eight = timing(8);
+    int total = one + two + four + eight;
+
+    printf("Time at array size 1: %d ns\n", one);
+    printf("Time at array size 2: %d ns\n", two);
+    printf("Time at array size 4: %d ns\n", four);
+    printf("Time at array size 8: %d ns\n", eight);
     printf("Time at array size 16: %d ns\n", timing(16));
     printf("Time at array size 32: %d ns\n", timing(32));
     printf("Time at array size 64: %d ns\n", timing(64));
@@ -142,6 +148,7 @@ void print_timings() {
     printf("Time at array size 256: %d ns\n", timing(256));
     printf("Time at array size 512: %d ns\n", timing(512));
     printf("Time at array size 1024: %d ns\n", timing(1024));
+    printf("Average Cache Reference Timing (mean of timing size 1, 2, 4, and 8): %d ns\n", total/4);
 }
 
 int main () {

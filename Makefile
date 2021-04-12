@@ -1,9 +1,8 @@
-
-output: projectfinal.o
-  g++ projectfinal.o -output 
+CC = gcc
+CFLAGS = -Wall -g
 
 projectfinal.o: projectfinal.c
-  g++ -c projectfinal.c
-  
+	${CC} ${CFLAGS} projectfinal.c -o projectfinal.o
+
 clean:
-  rm *.o output 
+	rm *.o
